@@ -44,3 +44,99 @@ INSERT INTO de_progress (tech, total_hrs, completed_hrs, status) VALUES
 ('Lakehouse Project', 70, 0, 'Week 9-10');
 
 -- TRACK WEEKLY: SELECT tech, status FROM de_progress ORDER BY total_hrs DESC;
+
+--------------------------------------------------------------------------------
+
+------ WHAT AWS ERVICES SHOUDLD I START
+
+
+AWS SERVICES FOR DATA ENGINEER - STEPWISE LEARNING ORDER (DEVOPS → DATA ENGINEER)
+================================================================
+
+STEP 1: STORAGE & CATALOG (Week 1-2) - 15 hrs
+1. S3 (10 hrs)
+   - Concepts: Buckets, prefixes, lifecycle rules, S3 Select, Glacier tiers
+   - Data Eng use: Data lake storage, partition pruning, S3 event notifications
+2. Glue Data Catalog (5 hrs)
+   - Concepts: Crawlers, metastore, table versions, partition indexes
+   - Data Eng use: Central metadata for Athena/EMR/Redshift
+
+================================================================
+
+STEP 2: SERVERLESS QUERY & ETL (Week 3-4) - 25 hrs
+3. Athena (10 hrs)
+   - Concepts: External tables, partitioned queries, CTAS, EXPLAIN analyze, cost per TB scanned
+   - Data Eng use: Ad-hoc SQL on S3 data lake, data validation
+4. Glue ETL (15 hrs)
+   - Concepts: PySpark jobs, DynamicFrame, bookmarks, job metrics, G.1X/G.2X workers
+   - Data Eng use: Serverless Spark ETL, schema evolution handling
+
+================================================================
+
+STEP 3: ORCHESTRATION (Week 5) - 15 hrs (YOUR DEVOPS SUPERPOWER)
+5. MWAA (Amazon Managed Workflows for Apache Airflow) (15 hrs)
+   - Concepts: DAGs folder structure, requirements.txt for providers, VPC networking, S3 log sync
+   - Data Eng use: Trigger Glue jobs, Athena queries, data quality checks
+
+================================================================
+
+STEP 4: WAREHOUSE & STREAMING (Week 6-7) - 20 hrs
+6. Redshift (10 hrs)
+   - Concepts: Distribution keys, sort keys, workload management, RA3 nodes, Redshift Spectrum
+   - Data Eng use: Data warehouse for BI, joining lake + warehouse data
+7. Kinesis (10 hrs)
+   - Concepts: Data Streams (shards, retention), Firehose (buffering, transformation), Enhanced Fan-out
+   - Data Eng use: Real-time ingestion to S3/Redshift
+
+================================================================
+
+STEP 5: ADVANCED COMPUTE (Week 8) - 10 hrs
+8. EMR Serverless (10 hrs)
+   - Concepts: Applications, workers (vCPU/memory), job runs, pre-initialized capacity
+   - Data Eng use: Large-scale Spark jobs (bigger than Glue limits)
+
+================================================================
+
+FASTEST LEARNING PATH (Priority Order):
+┌─────────────────────────────────────────────────────────┐
+│ 1. S3 + Glue Crawler + Athena (15 hrs)                  │
+│    → Query your first data lake with SQL                │
+│                                                         │
+│ 2. Glue ETL (10 hrs)                                    │
+│    → Transform S3 data → write back to S3               │
+│                                                         │
+│ 3. MWAA (10 hrs)                                        │
+│    → Orchestrate step 1+2 into daily pipeline           │
+│                                                         │
+│ 4. Redshift (5 hrs)                                     │
+│    → Copy from S3, optimize distribution keys           │
+│                                                         │
+│ 5. Kinesis Firehose (5 hrs)                             │
+│    → Stream → S3 → Glue ETL → Redshift                  │
+└─────────────────────────────────────────────────────────┘
+
+================================================================
+
+MINIMAL PRODUCTION STACK (Skip the rest):
+- Storage: S3
+- Catalog: Glue (Crawlers + Metastore)
+- Query: Athena (for validation) + Redshift (for BI)
+- ETL: Glue ETL (PySpark) or EMR Serverless (if > 100GB)
+- Orchestration: MWAA
+- Streaming: Kinesis Firehose (easiest, no Kafka management)
+
+================================================================
+
+TERRAFORM FOR DEVOPS (Quick templates - 5 hrs):
+resource "aws_s3_bucket" "data_lake" { bucket = "de-lake-${var.env}" }
+resource "aws_glue_crawler" "raw_crawler" { database_name = "raw_db" }
+resource "aws_athena_workgroup" "analyst" { name = "analyst-wg" }
+resource "aws_mwaa_environment" "airflow" { environment_class = "mw1.small" }
+
+================================================================
+
+AVOID THESE UNTIL MONTH 3 (Low ROI for Junior DE):
+✗ AWS Lake Formation (too complex, start with manual permissions)
+✗ AWS Data Pipeline (deprecated, use MWAA)
+✗ AWS DMS (database migration, not core data eng)
+✗ AWS Glue Studio (use raw PySpark for learning)
