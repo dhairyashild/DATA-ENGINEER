@@ -1,0 +1,97 @@
+"""
+Azure Databricks मध्ये Process - सोप्या मराठीत (Step by Step)
+
+====================================================================
+प्रथम: Azure Databricks CREATE केलं (तुम्ही म्हटल्याप्रमाणे)
+आता पुढची Process:
+
+--- STEP 1: Workspace मध्ये Notebook तयार करा ---
+Azure Databricks → Create Notebook
+Language: Python (PySpark automatically available)
+Cluster: Attach to existing cluster (किंवा नवीन create करा)
+
+# Spark session already exists - direct use:
+display(spark)  # Verify Spark is ready
+
+--- STEP 2: Azure Storage (ADLS) वरून डेटा READ करा ---
+# Azure Data Lake Storage वरून CSV read
+df = spark.read.format("csv") \
+    .option("header", "true") \
+    .load("abfss://container@storageaccount.dfs.core.windows.net/raw/sales.csv")
+
+# Check data
+display(df)
+
+--- STEP 3: Databricks मध्ये DATA PROCESS करा ---
+# Clean data (रिकाम्या rows काढा)
+df_clean = df.dropna()
+
+# Transform (नवीन column add करा)
+from pyspark.sql.functions import col, sum
+
+df_with_total = df_clean.withColumn("total_amount", col("quantity") * col("price"))
+
+# Aggregate (गटानुसार एकूण काढा)
+df_aggregated = df_with_total.groupBy("product_name").agg(sum("total_amount").alias("revenue"))
+
+display(df_aggregated)
+
+--- STEP 4: Databricks SQL मध्ये ANALYZE करा ---
+# Temp view create करा SQL साठी
+df_aggregated.createOrReplaceTempView("product_sales")
+
+# SQL query चालवा
+results = spark.sql("""
+    SELECT product_name, revenue 
+    FROM product_sales 
+    WHERE revenue > 1000 
+    ORDER BY revenue DESC
+""")
+
+display(results)
+
+--- STEP 5: Processed Data SAVE करा (Azure किंवा Delta Table) ---
+# Option A: Azure Storage ला save
+df_aggregated.write.mode("overwrite") \
+    .format("parquet") \
+    .save("abfss://container@storageaccount.dfs.core.windows.net/processed/sales_summary/")
+
+# Option B: Databricks Delta Table मध्ये save (recommended)
+df_aggregated.write.mode("overwrite") \
+    .format("delta") \
+    .saveAsTable("default.sales_summary")
+
+--- STEP 6: Auto JOB Schedule करा (रोज चालण्यासाठी) ---
+# Databricks मध्ये:
+# Workflows → Create Job → Select Notebook → Set Schedule (Daily 6 AM)
+
+"""
+====================================================================
+COMPLETE AZURE DATABRICKS FLOW:
+
+[Azure Storage] → [Databricks Read] → [Clean/Transform] → [SQL Analysis] → [Save Results]
+      ↓                    ↓                    ↓                  ↓                ↓
+   raw CSV             spark.read          groupBy/agg       spark.sql       Delta Table
+   (ADLS)              display()           withColumn        display()       Schedule Job
+
+====================================================================
+महत्वाच्या Azure Databricks Features:
+
+1. Auto-scaling clusters (जास्त डेटा आला auto वाढतो)
+2. DBFS (Databricks File System - temporary storage)
+3. Delta Lake (ACID transactions - data reliable)
+4. Unity Catalog (data governance - कोणाला काय दिसेल)
+5. Workflows Jobs (auto schedule)
+
+====================================================================
+तुम्ही Azure Databricks CREATE केल्यानंतर लगेच हे STEPS करा:
+
+Step 1: Notebook उघडा
+Step 2: Cluster start करा  
+Step 3: डेटा read करा (Azure storage वरून)
+Step 4: Process करा
+Step 5: Save करा
+Step 6: Schedule करा
+
+हाच AZURE DATABRICKS वर DATA ENGINEERING चा PROCESS!
+"""
